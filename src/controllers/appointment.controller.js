@@ -174,3 +174,61 @@ export const getAllAppointments = async (req, res) => {
         });
     }
 };
+
+// Update Appointment Status for admin
+export const updateAppointmentStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        // Validate Appointment ID
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid appointment ID.",
+            });
+        }
+
+        // Validate Status
+        const allowedStatuses = [
+            "pending",
+            "confirmed",
+            "completed",
+            "cancelled",
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid appointment status.",
+            });
+        }
+
+        const appointment = await Appointment.findByIdAndUpdate(
+            id,
+            { $set: { status } },
+            { new: true, runValidators: true }
+        );
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found.",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Appointment status updated successfully.",
+            data: appointment,
+        });
+
+    } catch (error) {
+        console.error("Update Appointment Status Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update appointment status.",
+        });
+    }
+};

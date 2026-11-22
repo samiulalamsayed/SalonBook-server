@@ -5,6 +5,7 @@ import {
     getMyAppointments,
     cancelMyAppointment,
     getAllAppointments,
+    updateAppointmentStatus,
 } from "../controllers/appointment.controller.js";
 
 import {
@@ -45,6 +46,14 @@ router.get(
     verifyAuth,
     verifyAdmin,
     getAllAppointments
+);
+
+// Update Appointment Status (Admin)
+router.patch(
+    "/:id/status",
+    verifyAuth,
+    verifyAdmin,
+    updateAppointmentStatus
 );
 
 export default router;
