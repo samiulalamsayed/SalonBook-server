@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import serviceRoutes from "./src/routes/service.routes.js";
+import appointmentRoutes from "./src/routes/appointment.routes.js";
 
 import { connectMongoDB, connectMongoose } from "./src/config/db.js";
 import { auth } from "./src/config/auth.js";
@@ -25,7 +26,10 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // JSON Middleware
 app.use(express.json());
+
+// API Routes
 app.use("/api/services", serviceRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 // Root Route
 app.get("/", (req, res) => {
