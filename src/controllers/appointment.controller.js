@@ -150,3 +150,27 @@ export const cancelMyAppointment = async (req, res) => {
         });
     }
 };
+
+// Get All Appointments for Admin
+export const getAllAppointments = async (req, res) => {
+    try {
+        const appointments = await Appointment.find()
+            .populate("serviceId", "name category price duration image")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            message: "All appointments fetched successfully.",
+            total: appointments.length,
+            data: appointments,
+        });
+
+    } catch (error) {
+        console.error("Get All Appointments Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch appointments.",
+        });
+    }
+};

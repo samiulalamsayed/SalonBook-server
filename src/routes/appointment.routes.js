@@ -4,11 +4,13 @@ import {
     createAppointment,
     getMyAppointments,
     cancelMyAppointment,
+    getAllAppointments,
 } from "../controllers/appointment.controller.js";
 
 import {
     verifyAuth,
     verifyCustomer,
+    verifyAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -35,6 +37,14 @@ router.patch(
     verifyAuth,
     verifyCustomer,
     cancelMyAppointment
+);
+
+// Get All Appointments (Admin)
+router.get(
+    "/",
+    verifyAuth,
+    verifyAdmin,
+    getAllAppointments
 );
 
 export default router;
