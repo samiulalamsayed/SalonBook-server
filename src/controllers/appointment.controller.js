@@ -2,6 +2,8 @@ import Appointment from "../models/appointment.model.js";
 import Service from "../models/service.model.js";
 import { appointmentSchema } from "../utils/appointment.validation.js";
 import mongoose from "mongoose";
+import { connectMongoDB } from "../config/db.js";
+import { ObjectId } from "mongodb";
 
 // Create Appointment
 export const createAppointment = async (req, res) => {
@@ -156,13 +158,46 @@ export const getAllAppointments = async (req, res) => {
     try {
         const appointments = await Appointment.find()
             .populate("serviceId", "name category price duration image")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const db = await connectMongoDB();
+
+        const customerIds = [
+            ...new Set(appointments.map((item) => item.customerId)),
+        ];
+
+        const customers = await db.collection("user")
+            .find(
+                {
+                    _id: {
+                        $in: customerIds.map((id) => new ObjectId(id)),
+                    },
+                },
+                { projection: { name: 1, email: 1 } }
+            )
+            .toArray();
+
+        const customerMap = new Map(
+            customers.map((customer) => [
+                customer._id.toString(),
+                {
+                    name: customer.name,
+                    email: customer.email,
+                },
+            ])
+        );
+
+        const result = appointments.map((appointment) => ({
+            ...appointment,
+            customer: customerMap.get(appointment.customerId) || null,
+        }));
 
         res.status(200).json({
             success: true,
             message: "All appointments fetched successfully.",
-            total: appointments.length,
-            data: appointments,
+            total: result.length,
+            data: result,
         });
 
     } catch (error) {
