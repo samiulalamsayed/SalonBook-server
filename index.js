@@ -5,6 +5,8 @@ import { toNodeHandler } from "better-auth/node";
 import serviceRoutes from "./src/routes/service.routes.js";
 import appointmentRoutes from "./src/routes/appointment.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
+import dashboardRoutes from "./src/routes/dashboard.routes.js";
+import paymentRoutes from "./src/routes/payment.routes.js";
 
 import { connectMongoDB, connectMongoose } from "./src/config/db.js";
 import { auth } from "./src/config/auth.js";
@@ -22,6 +24,9 @@ app.use(
   })
 );
 
+// Stripe Webhook must come before express.json()
+app.use("/api/payments", paymentRoutes);
+
 // Better Auth Handler
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
@@ -32,6 +37,8 @@ app.use(express.json());
 app.use("/api/services", serviceRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Root Route
 app.get("/", (req, res) => {
