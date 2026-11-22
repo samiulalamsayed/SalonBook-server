@@ -9,7 +9,7 @@ import {
 } from "../controllers/appointment.controller.js";
 
 import {
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     verifyAdmin,
 } from "../middleware/auth.middleware.js";
@@ -19,7 +19,7 @@ const router = express.Router();
 // Customer Appointment Booking
 router.post(
     "/",
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     createAppointment
 );
@@ -27,7 +27,7 @@ router.post(
 // Get Customer Appointments
 router.get(
     "/my-appointments",
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     getMyAppointments
 );
@@ -35,7 +35,7 @@ router.get(
 // Cancel Customer Appointment
 router.patch(
     "/:id/cancel",
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     cancelMyAppointment
 );
@@ -43,7 +43,7 @@ router.patch(
 // Get All Appointments (Admin)
 router.get(
     "/",
-    verifyAuth,
+    verifyJWT,
     verifyAdmin,
     getAllAppointments
 );
@@ -51,7 +51,7 @@ router.get(
 // Update Appointment Status (Admin)
 router.patch(
     "/:id/status",
-    verifyAuth,
+    verifyJWT,
     verifyAdmin,
     updateAppointmentStatus
 );

@@ -11,7 +11,7 @@ import {
 } from "../controllers/service.controller.js";
 
 import {
-    verifyAuth,
+    verifyJWT,
     verifyAdmin,
 } from "../middleware/auth.middleware.js";
 
@@ -23,15 +23,15 @@ router.get("/featured", getFeaturedServices);
 router.get("/:id", getServiceById);
 
 // Admin Routes
-router.post("/", verifyAuth, verifyAdmin, createService);
+router.post("/", verifyJWT, verifyAdmin, createService);
 
-router.patch("/:id", verifyAuth, verifyAdmin, updateService);
+router.patch("/:id", verifyJWT, verifyAdmin, updateService);
 
-router.delete("/:id", verifyAuth, verifyAdmin, deleteService);
+router.delete("/:id", verifyJWT, verifyAdmin, deleteService);
 
 router.patch(
     "/:id/status",
-    verifyAuth,
+    verifyJWT,
     verifyAdmin,
     updateServiceStatus
 );

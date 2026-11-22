@@ -7,6 +7,7 @@ import appointmentRoutes from "./src/routes/appointment.routes.js";
 import userRoutes from "./src/routes/user.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import paymentRoutes from "./src/routes/payment.routes.js";
+import { verifyJWT } from "./src/middleware/auth.middleware.js";
 
 import { connectMongoDB, connectMongoose } from "./src/config/db.js";
 import { auth } from "./src/config/auth.js";

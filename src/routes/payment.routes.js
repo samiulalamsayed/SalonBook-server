@@ -1,33 +1,32 @@
 import express from "express";
-import Stripe from "stripe";
 
 import {
     createCheckoutSession,
     getAllTransactions,
 } from "../controllers/payment.controller.js";
+
 import { handleStripeWebhook } from "../controllers/webhook.controller.js";
 
 import {
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     verifyAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Stripe Webhook
+// Stripe Webhook (Public - Stripe Signature Verification)
 router.post(
     "/webhook",
     express.raw({ type: "application/json" }),
     handleStripeWebhook
 );
 
-
 // Create Checkout Session
 router.post(
     "/create-checkout-session",
     express.json(),
-    verifyAuth,
+    verifyJWT,
     verifyCustomer,
     createCheckoutSession
 );
@@ -35,7 +34,7 @@ router.post(
 // Get All Transactions (Admin)
 router.get(
     "/transactions",
-    verifyAuth,
+    verifyJWT,
     verifyAdmin,
     getAllTransactions
 );
