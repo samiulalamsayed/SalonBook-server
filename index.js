@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { toNodeHandler } from "better-auth/node";
 import serviceRoutes from "./src/routes/service.routes.js";
 import appointmentRoutes from "./src/routes/appointment.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
 
 import { connectMongoDB, connectMongoose } from "./src/config/db.js";
 import { auth } from "./src/config/auth.js";
@@ -30,6 +31,7 @@ app.use(express.json());
 // API Routes
 app.use("/api/services", serviceRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/users", userRoutes);
 
 // Root Route
 app.get("/", (req, res) => {
