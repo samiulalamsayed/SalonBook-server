@@ -1,5 +1,7 @@
 import Service from "../models/service.model.js";
 import mongoose from "mongoose";
+import { serviceSchema } from "../utils/service.validation.js";
+import { serviceStatusSchema } from "../utils/service.validation.js";
 
 // Get All Active Services
 export const getAllServices = async (req, res) => {
@@ -105,7 +107,17 @@ export const getServiceById = async (req, res) => {
 // Create New Service
 export const createService = async (req, res) => {
     try {
-        const service = await Service.create(req.body);
+        const validation = serviceSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: validation.error.issues,
+            });
+        }
+
+        const service = await Service.create(validation.data);
 
         res.status(201).json({
             success: true,
@@ -113,7 +125,7 @@ export const createService = async (req, res) => {
             data: service,
         });
     } catch (error) {
-        res.status(400).json({
+        res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -132,9 +144,26 @@ export const updateService = async (req, res) => {
             });
         }
 
+        const validation = serviceSchema.partial().safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: validation.error.issues,
+            });
+        }
+
+        if (Object.keys(validation.data).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide at least one valid field to update.",
+            });
+        }
+
         const service = await Service.findByIdAndUpdate(
             id,
-            req.body,
+            { $set: validation.data },
             {
                 new: true,
                 runValidators: true,
@@ -154,7 +183,7 @@ export const updateService = async (req, res) => {
             data: service,
         });
     } catch (error) {
-        res.status(400).json({
+        res.status(500).json({
             success: false,
             message: error.message,
         });
@@ -198,7 +227,6 @@ export const deleteService = async (req, res) => {
 export const updateServiceStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
@@ -207,16 +235,19 @@ export const updateServiceStatus = async (req, res) => {
             });
         }
 
-        if (!["active", "inactive"].includes(status)) {
+        const validation = serviceStatusSchema.safeParse(req.body);
+
+        if (!validation.success) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid service status",
+                message: "Validation failed",
+                errors: validation.error.issues,
             });
         }
 
         const service = await Service.findByIdAndUpdate(
             id,
-            { status },
+            { $set: validation.data },
             { new: true, runValidators: true }
         );
 
