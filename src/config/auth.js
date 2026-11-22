@@ -1,0 +1,51 @@
+
+import { betterAuth } from "better-auth";
+import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { jwt } from "better-auth/plugins";
+import { connectMongoDB, mongoClient } from "./db.js";
+
+const db = await connectMongoDB();
+
+export const auth = betterAuth({
+    database: mongodbAdapter(db, { client: mongoClient }),
+
+    baseURL: process.env.BETTER_AUTH_URL,
+    secret: process.env.BETTER_AUTH_SECRET,
+
+    emailAndPassword: {
+        enabled: true,
+        requireEmailVerification: false,
+    },
+
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+    },
+
+    user: {
+        additionalFields: {
+            role: {
+                type: "string",
+                required: false,
+                defaultValue: "customer",
+                input: false,
+            },
+
+            isBlocked: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
+                input: false,
+            },
+
+            phoneNumber: {
+                type: "string",
+                required: false,
+            },
+        },
+    },
+
+    plugins: [jwt()],
+});
