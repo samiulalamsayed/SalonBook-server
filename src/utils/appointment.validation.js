@@ -15,4 +15,15 @@ export const appointmentSchema = z.object({
         /^([01]\d|2[0-3]):[0-5]\d$/,
         "Invalid appointment time. Use HH:mm format."
     ),
+
+    phoneNumber: z.string().trim().regex(
+        /^01[3-9]\d{8}$/,
+        "Please provide a valid Bangladeshi mobile number."
+    ),
+
+    message: z.string()
+        .trim()
+        .max(500, "Message cannot exceed 500 characters.")
+        .optional()
+        .default(""),
 }).strict();

@@ -8,6 +8,7 @@ import userRoutes from "./src/routes/user.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import paymentRoutes from "./src/routes/payment.routes.js";
 import { verifyJWT } from "./src/middleware/auth.middleware.js";
+import uploadRoutes from "./src/routes/upload.routes.js";
 
 import { connectMongoDB, connectMongoose } from "./src/config/db.js";
 import { auth } from "./src/config/auth.js";
@@ -40,6 +41,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

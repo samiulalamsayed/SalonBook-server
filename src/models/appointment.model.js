@@ -23,6 +23,23 @@ const appointmentSchema = new mongoose.Schema(
             required: [true, "Appointment time is required"],
         },
 
+        phoneNumber: {
+            type: String,
+            required: [true, "Phone number is required"],
+            trim: true,
+            match: [
+                /^01[3-9]\d{8}$/,
+                "Please provide a valid Bangladeshi mobile number",
+            ],
+        },
+
+        message: {
+            type: String,
+            trim: true,
+            maxlength: [500, "Message cannot exceed 500 characters"],
+            default: "",
+        },
+
         totalAmount: {
             type: Number,
             required: true,

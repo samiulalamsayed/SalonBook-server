@@ -15,7 +15,7 @@ export const serviceSchema = z.object({
 
     description: z.string().min(10, "Description must be at least 10 characters"),
 
-    price: z.coerce.number().min(0, "Price cannot be negative"),
+    price: z.coerce.number().min(100, "Price must be at least 100 Taka"),
 
     duration: z.coerce.number().int().min(1, "Duration must be at least 1 minute"),
 

@@ -3,6 +3,7 @@ import express from "express";
 import {
     createCheckoutSession,
     getAllTransactions,
+    verifyPaymentSession,
 } from "../controllers/payment.controller.js";
 
 import { handleStripeWebhook } from "../controllers/webhook.controller.js";
@@ -29,6 +30,13 @@ router.post(
     verifyJWT,
     verifyCustomer,
     createCheckoutSession
+);
+
+router.get(
+    "/verify-session",
+    verifyJWT,
+    verifyCustomer,
+    verifyPaymentSession
 );
 
 // Get All Transactions (Admin)

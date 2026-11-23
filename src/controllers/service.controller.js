@@ -270,3 +270,43 @@ export const updateServiceStatus = async (req, res) => {
         });
     }
 };
+
+// Get All Services (Admin)
+export const getAllServicesForAdmin = async (req, res) => {
+    try {
+        const { search, category, status } = req.query;
+
+        const query = {};
+
+        if (search) {
+            query.name = {
+                $regex: search,
+                $options: "i",
+            };
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+        if (status) {
+            query.status = status;
+        }
+
+        const services = await Service.find(query).sort({
+            createdAt: -1,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "All services fetched successfully.",
+            total: services.length,
+            data: services,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch services.",
+        });
+    }
+};

@@ -19,10 +19,15 @@ export const createAppointment = async (req, res) => {
             });
         }
 
-        const { serviceId, appointmentDate, appointmentTime } =
-            validation.data;
+        const {
+            serviceId,
+            appointmentDate,
+            appointmentTime,
+            phoneNumber,
+            message,
+        } = validation.data;
 
-        // Check appointment date and time
+        // Convert appointment date and time to Bangladesh time
         const bookingDateTime = new Date(
             `${appointmentDate}T${appointmentTime}:00+06:00`
         );
@@ -37,6 +42,10 @@ export const createAppointment = async (req, res) => {
             });
         }
 
+        const appointmentDateValue = new Date(
+            `${appointmentDate}T00:00:00+06:00`
+        );
+
         // Find active service
         const service = await Service.findOne({
             _id: serviceId,
@@ -50,18 +59,34 @@ export const createAppointment = async (req, res) => {
             });
         }
 
+        // Prevent duplicate active appointments for the same date and time
+        const existingAppointment = await Appointment.findOne({
+            appointmentDate: appointmentDateValue,
+            appointmentTime,
+            status: { $in: ["pending", "confirmed"] },
+        });
+
+        if (existingAppointment) {
+            return res.status(409).json({
+                success: false,
+                message: "This time slot is already booked. Please select another time.",
+            });
+        }
+
         // Create appointment
         const appointment = await Appointment.create({
             customerId: req.user.id,
             serviceId: service._id,
-            appointmentDate: new Date(`${appointmentDate}T00:00:00+06:00`),
+            appointmentDate: appointmentDateValue,
             appointmentTime,
+            phoneNumber,
+            message,
             totalAmount: service.price,
             status: "pending",
             paymentStatus: "unpaid",
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Appointment booked successfully.",
             data: appointment,
@@ -70,12 +95,13 @@ export const createAppointment = async (req, res) => {
     } catch (error) {
         console.error("Create Appointment Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to create appointment.",
         });
     }
 };
+
 
 // Get Customer Appointments
 export const getMyAppointments = async (req, res) => {
@@ -84,19 +110,46 @@ export const getMyAppointments = async (req, res) => {
             customerId: req.user.id,
         })
             .populate("serviceId", "name category price duration image")
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
 
-        res.status(200).json({
+        // Get Customer Information
+        const db = await connectMongoDB();
+
+        const customer = await db.collection("user").findOne(
+            {
+                _id: new ObjectId(req.user.id),
+            },
+            {
+                projection: {
+                    name: 1,
+                    email: 1,
+                },
+            }
+        );
+
+        // Attach Customer Information to Appointments
+        const result = appointments.map((appointment) => ({
+            ...appointment,
+            customer: customer
+                ? {
+                    name: customer.name,
+                    email: customer.email,
+                }
+                : null,
+        }));
+
+        return res.status(200).json({
             success: true,
             message: "Appointments fetched successfully.",
-            total: appointments.length,
-            data: appointments,
+            total: result.length,
+            data: result,
         });
 
     } catch (error) {
         console.error("Get Appointments Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to fetch appointments.",
         });
@@ -137,7 +190,7 @@ export const cancelMyAppointment = async (req, res) => {
         appointment.status = "cancelled";
         await appointment.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "Appointment cancelled successfully.",
             data: appointment,
@@ -146,12 +199,13 @@ export const cancelMyAppointment = async (req, res) => {
     } catch (error) {
         console.error("Cancel Appointment Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to cancel appointment.",
         });
     }
 };
+
 
 // Get All Appointments for Admin
 export const getAllAppointments = async (req, res) => {
@@ -171,10 +225,17 @@ export const getAllAppointments = async (req, res) => {
             .find(
                 {
                     _id: {
-                        $in: customerIds.map((id) => new ObjectId(id)),
+                        $in: customerIds
+                            .filter((id) => ObjectId.isValid(id))
+                            .map((id) => new ObjectId(id)),
                     },
                 },
-                { projection: { name: 1, email: 1 } }
+                {
+                    projection: {
+                        name: 1,
+                        email: 1,
+                    },
+                }
             )
             .toArray();
 
@@ -193,7 +254,7 @@ export const getAllAppointments = async (req, res) => {
             customer: customerMap.get(appointment.customerId) || null,
         }));
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "All appointments fetched successfully.",
             total: result.length,
@@ -203,14 +264,15 @@ export const getAllAppointments = async (req, res) => {
     } catch (error) {
         console.error("Get All Appointments Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to fetch appointments.",
         });
     }
 };
 
-// Update Appointment Status for admin
+
+// Update Appointment Status for Admin
 export const updateAppointmentStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -224,26 +286,15 @@ export const updateAppointmentStatus = async (req, res) => {
             });
         }
 
-        // Validate Status
-        const allowedStatuses = [
-            "pending",
-            "confirmed",
-            "completed",
-            "cancelled",
-        ];
-
-        if (!allowedStatuses.includes(status)) {
+        // Only confirmed and cancelled status updates are allowed
+        if (!["confirmed", "cancelled"].includes(status)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid appointment status.",
+                message: "Admin can only confirm or cancel appointments.",
             });
         }
 
-        const appointment = await Appointment.findByIdAndUpdate(
-            id,
-            { $set: { status } },
-            { new: true, runValidators: true }
-        );
+        const appointment = await Appointment.findById(id);
 
         if (!appointment) {
             return res.status(404).json({
@@ -252,16 +303,38 @@ export const updateAppointmentStatus = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        // Only pending appointments can be confirmed
+        if (status === "confirmed" && appointment.status !== "pending") {
+            return res.status(400).json({
+                success: false,
+                message: "Only pending appointments can be confirmed.",
+            });
+        }
+
+        // Admin can cancel pending or confirmed appointments
+        if (
+            status === "cancelled" &&
+            !["pending", "confirmed"].includes(appointment.status)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Only pending or confirmed appointments can be cancelled.",
+            });
+        }
+
+        appointment.status = status;
+        await appointment.save();
+
+        return res.status(200).json({
             success: true,
-            message: "Appointment status updated successfully.",
+            message: `Appointment ${status} successfully.`,
             data: appointment,
         });
 
     } catch (error) {
         console.error("Update Appointment Status Error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Failed to update appointment status.",
         });

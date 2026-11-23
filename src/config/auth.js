@@ -1,4 +1,3 @@
-
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { jwt } from "better-auth/plugins";
@@ -14,6 +13,12 @@ export const auth = betterAuth({
         "http://localhost:3000",
     ],
     secret: process.env.BETTER_AUTH_SECRET,
+
+    // Session Configuration
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
+        updateAge: 60 * 60 * 24,     // 1 day
+    },
 
     emailAndPassword: {
         enabled: true,
@@ -62,5 +67,4 @@ export const auth = betterAuth({
             },
         }),
     ],
-
 });

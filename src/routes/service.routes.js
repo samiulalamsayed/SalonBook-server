@@ -8,6 +8,7 @@ import {
     updateService,
     deleteService,
     updateServiceStatus,
+    getAllServicesForAdmin,
 } from "../controllers/service.controller.js";
 
 import {
@@ -20,6 +21,15 @@ const router = express.Router();
 // Public Routes
 router.get("/", getAllServices);
 router.get("/featured", getFeaturedServices);
+
+// Get All Services (Admin)
+router.get(
+    "/admin/all",
+    verifyJWT,
+    verifyAdmin,
+    getAllServicesForAdmin
+);
+
 router.get("/:id", getServiceById);
 
 // Admin Routes

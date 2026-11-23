@@ -167,3 +167,63 @@ export const getAllTransactions = async (req, res) => {
         });
     }
 };
+
+export const verifyPaymentSession = async (req, res) => {
+    try {
+        const { session_id } = req.query;
+
+        if (!session_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Session ID is required.",
+            });
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(session_id);
+
+        if (session.metadata?.customerId !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to view this payment.",
+            });
+        }
+
+        if (session.payment_status !== "paid") {
+            return res.status(400).json({
+                success: false,
+                message: "Payment has not been completed.",
+            });
+        }
+
+        const appointment = await Appointment.findOne({
+            _id: session.metadata.appointmentId,
+            customerId: req.user.id,
+        }).populate("serviceId", "name price");
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found.",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Payment verified successfully.",
+            data: {
+                appointment,
+                amount: session.amount_total / 100,
+                currency: session.currency,
+                paymentStatus: session.payment_status,
+            },
+        });
+
+    } catch (error) {
+        console.error("Verify Payment Session Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to verify payment.",
+        });
+    }
+};

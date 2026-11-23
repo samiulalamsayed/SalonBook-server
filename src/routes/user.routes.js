@@ -4,6 +4,7 @@ import {
     getCustomerById,
     blockCustomer,
     unblockCustomer,
+    updateMyProfile,
 } from "../controllers/user.controller.js";
 
 import {
@@ -12,6 +13,9 @@ import {
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Update Own Profile (Admin & Customer)
+router.patch("/profile/me", verifyJWT, updateMyProfile);
 
 // Get All Registered Customers (Admin)
 router.get("/", verifyJWT, verifyAdmin, getAllCustomers);

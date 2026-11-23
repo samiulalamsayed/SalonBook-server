@@ -183,3 +183,102 @@ export const unblockCustomer = async (req, res) => {
         });
     }
 };
+
+export const updateMyProfile = async (req, res) => {
+    try {
+        const { name, image, phoneNumber } = req.body;
+
+        if (!name || typeof name !== "string" || !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Name is required.",
+            });
+        }
+
+        if (
+            image !== undefined &&
+            image !== null &&
+            typeof image !== "string"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid profile image.",
+            });
+        }
+
+        if (
+            phoneNumber !== undefined &&
+            typeof phoneNumber !== "string"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid phone number.",
+            });
+        }
+
+        if (!ObjectId.isValid(req.user.id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user ID.",
+            });
+        }
+
+        const db = await connectMongoDB();
+
+        const updateData = {
+            name: name.trim(),
+        };
+
+        if (image !== undefined) {
+            updateData.image = image;
+        }
+
+        if (phoneNumber !== undefined) {
+            updateData.phoneNumber = phoneNumber.trim();
+        }
+
+        const result = await db.collection("user").updateOne(
+            {
+                _id: new ObjectId(req.user.id),
+            },
+            {
+                $set: updateData,
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found.",
+            });
+        }
+
+        const updatedUser = await db.collection("user").findOne(
+            { _id: new ObjectId(req.user.id) },
+            {
+                projection: {
+                    name: 1,
+                    email: 1,
+                    image: 1,
+                    phoneNumber: 1,
+                    role: 1,
+                    isBlocked: 1,
+                },
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully.",
+            data: updatedUser,
+        });
+
+    } catch (error) {
+        console.error("Update My Profile Error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update profile.",
+        });
+    }
+};
